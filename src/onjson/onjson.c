@@ -1,24 +1,31 @@
 #include <stdlib.h>
 
-#include "cJSON.h"
+#include "cjson/cJSON.h"
 
-#include "ocnet_string.h"
-#include "ocnet_malloc.h"
+#include "libonplatform/ocnet_string.h"
+#include "libonplatform/ocnet_malloc.h"
 
-#include "onjson.h"
+#include "onjson/onjson.h"
 
-void *ocnet_json_init(char *json)
+struct ocnet_json {
+    cJSON   *cjson;
+};
+
+ocnet_json_t *ocnet_json_init(char *json)
 {
+    ocnet_json_t *onjson = (ocnet_json_t *)malloc(sizeof(ocnet_json_t));
     cJSON *c_json = cJSON_Parse(json);
 
     if (NULL == c_json) {
+        free(onjson);
         return NULL;
     }
+    onjson->cjson = c_json;
 
-    return (void *)c_json;
+    return (void *)json;
 }
 
-static cJSON *__json_item(void *ocnet_json, char *key, int type)
+static cJSON *__json_item(cJSON *ocnet_json, char *key, int type)
 {
     cJSON *item = cJSON_GetObjectItem(ocnet_json, key);
 
@@ -33,12 +40,12 @@ static cJSON *__json_item(void *ocnet_json, char *key, int type)
     return item;
 }
 
-int ocnet_json_get_item_int(void *ocnet_json, char *key, int *value)
+int ocnet_json_get_item_int(ocnet_json_t *ocnet_json, char *key, int *value)
 {
     cJSON *item = NULL;
 
     if (NULL == (item = __json_item(
-                    ocnet_json, key, cJSON_Number))) {
+                    ocnet_json->cjson, key, cJSON_Number))) {
         return -1;
     }
 
@@ -46,14 +53,14 @@ int ocnet_json_get_item_int(void *ocnet_json, char *key, int *value)
     return 0;
 }
 
-int ocnet_json_get_item_bool(void *ocnet_json, char *key, char *value)
+int ocnet_json_get_item_bool(ocnet_json_t *ocnet_json, char *key, char *value)
 {
     cJSON *item = NULL;
 
     if (NULL == (item = __json_item(
-                    ocnet_json, key, cJSON_True))) {
+                    ocnet_json->cjson, key, cJSON_True))) {
         if (NULL == (item = __json_item(
-                        ocnet_json, key, cJSON_False))) {
+                        ocnet_json->cjson, key, cJSON_False))) {
             return -1;
         }
     }
@@ -62,12 +69,12 @@ int ocnet_json_get_item_bool(void *ocnet_json, char *key, char *value)
     return 0;
 }
 
-int ocnet_json_get_item_string(void *ocnet_json, char *key, char *str, int max_len)
+int ocnet_json_get_item_string(ocnet_json_t *ocnet_json, char *key, char *str, int max_len)
 {
     cJSON *item = NULL;
 
     if (NULL == (item = __json_item(
-                    ocnet_json, key, cJSON_String))) {
+                    ocnet_json->cjson, key, cJSON_String))) {
         return -1;
     }
 
@@ -81,7 +88,8 @@ int ocnet_json_get_item_string(void *ocnet_json, char *key, char *str, int max_l
     return 0;
 }
 
-void ocnet_json_final(void *ocnet_json)
+void ocnet_json_final(ocnet_json_t *ocnet_json)
 {
-    cJSON_Delete(ocnet_json);
+    cJSON_Delete(ocnet_json->cjson);
+    free(ocnet_json);
 }

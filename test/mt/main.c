@@ -6,7 +6,7 @@
 int main(int argc, char *argv[])
 {
     char *test_json = "{\"a\": \"atest\", \"b\": 125, \"c\": true, \"d\": false}";
-    void *ocnet_json = ocnet_json_init(test_json);
+    ocnet_json_t *ocnet_json = ocnet_json_init(test_json);
 
     char str[1024] = {0};
     int int_value = 0;
